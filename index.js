@@ -48,6 +48,7 @@ Geocoder.prototype = {
         }
         if (!options) {options = {};}
         var GeocodeResponse = {};
+        conString = ("conString" in options) ? options.conString || conString;
 
         //check redis for a cached result
         redis.get('geo:' + location, function (err, result){
