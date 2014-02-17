@@ -61,7 +61,9 @@ Geocoder.prototype = {
                     if(err) {return callback( err, null )}
                     client.query( {name: 'tiger_geocode' , text:"SELECT g.rating, ST_X(g.geomout) As lon, ST_Y(g.geomout) As lat,"+
                         "(addy).address As streetnumber, (addy).streetname As street, "+
-                        "(addy).streettypeabbrev As streettype, (addy).location As city, (addy).stateabbrev As state, (addy).zip As zip, (pprint_addy(addy)) As normalized_address "+
+                        "(addy).streettypeabbrev As streettype, (addy).location As city, (addy).stateabbrev As state, (addy).zip As zip, (pprint_addy(addy)) As normalized_address, "+
+                        "ST_GeographyFromText('SRID=4326;POINT(' || ST_X(g.geomout) || ' ' ||  ST_Y(g.geomout) || ')') as the_geom, "+
+                        "ST_GeographyFromText('SRID=3857;POINT(' || ST_X(g.geomout) || ' ' ||  ST_Y(g.geomout) || ')') as the_geom_webmercator "+
                         "FROM geocode($1, 1) As g LIMIT 1", values:[location]}, function(err, results){
                         done();   //disconnect from pg and return the client to the pool
                         if(err) {return callback( err, null )}
@@ -137,6 +139,10 @@ function parseResult(options, result, callback){
                     'location': {
                         'lat': result.lat,
                         'lon': result.lon
+                    },
+                    'cartodb': {
+                      'the_geom': result.the_geom,
+                      'the_geom_webmercator': result.the_geom_webmercator
                     }
                 },
                 'address_component':[]
@@ -209,6 +215,12 @@ function parseResult(options, result, callback){
             }
             if (result.zip){
                 callback.result.zipcode = result.zip;
+            }
+            if (result.the_geom){
+                callback.result.cartodb = {
+                  "the_geom": result.the_geom,
+                  "the_geom_webmercator": result.the_geom_webmercator
+                };
             }
     }
 }
